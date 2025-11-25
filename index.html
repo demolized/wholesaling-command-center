@@ -1,844 +1,377 @@
-import React, { useState, useEffect } from 'react';
-import { Download, Plus, Trash2, Edit2, Phone, Mail, DollarSign, Home, Users, BarChart3, Calendar, Search, Filter, CheckSquare, AlertCircle } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wholesaling Command Center - 6-Figure Business Tracker</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; }
+        .gradient-card { background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .stat-card { transition: transform 0.3s, box-shadow 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: all 0.3s; }
+        .btn-primary:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(102,126,234,0.4); }
+        .input-field { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; }
+        .input-field:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102,126,234,0.3); }
+        .tab-active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .modal-overlay { background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-const WholesalingTracker = () => {
-  const [activeTab, setActiveTab] = useState('leads');
-  const [leads, setLeads] = useState([]);
-  const [buyers, setBuyers] = useState([]);
-  const [deals, setDeals] = useState([]);
-  const [activities, setActivities] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+        // Icons as simple SVG components
+        const Icons = {
+            Phone: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>,
+            Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/></svg>,
+            DollarSign: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
+            BarChart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>,
+            Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>,
+            Search: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>,
+            X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>,
+            Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>,
+            Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
+            Edit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        };
 
-  // Load data from storage on mount
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const leadsData = await window.storage.get('wholesaling-leads');
-        const buyersData = await window.storage.get('wholesaling-buyers');
-        const dealsData = await window.storage.get('wholesaling-deals');
-        const activitiesData = await window.storage.get('wholesaling-activities');
-        
-        if (leadsData) setLeads(JSON.parse(leadsData.value));
-        if (buyersData) setBuyers(JSON.parse(buyersData.value));
-        if (dealsData) setDeals(JSON.parse(dealsData.value));
-        if (activitiesData) setActivities(JSON.parse(activitiesData.value));
-      } catch (error) {
-        console.log('No existing data, starting fresh');
-      }
-    };
-    loadData();
-  }, []);
+        function WholesalingTracker() {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [leads, setLeads] = useState([]);
+            const [buyers, setBuyers] = useState([]);
+            const [deals, setDeals] = useState([]);
+            const [showModal, setShowModal] = useState(null);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [editItem, setEditItem] = useState(null);
 
-  // Save data to storage whenever it changes
-  useEffect(() => {
-    const saveData = async () => {
-      try {
-        await window.storage.set('wholesaling-leads', JSON.stringify(leads));
-      } catch (error) {
-        console.error('Error saving leads:', error);
-      }
-    };
-    if (leads.length > 0) saveData();
-  }, [leads]);
+            // Load data from localStorage on mount
+            useEffect(() => {
+                const savedLeads = localStorage.getItem('wc-leads');
+                const savedBuyers = localStorage.getItem('wc-buyers');
+                const savedDeals = localStorage.getItem('wc-deals');
+                if (savedLeads) setLeads(JSON.parse(savedLeads));
+                if (savedBuyers) setBuyers(JSON.parse(savedBuyers));
+                if (savedDeals) setDeals(JSON.parse(savedDeals));
+            }, []);
 
-  useEffect(() => {
-    const saveData = async () => {
-      try {
-        await window.storage.set('wholesaling-buyers', JSON.stringify(buyers));
-      } catch (error) {
-        console.error('Error saving buyers:', error);
-      }
-    };
-    if (buyers.length > 0) saveData();
-  }, [buyers]);
+            // Save to localStorage when data changes
+            useEffect(() => { localStorage.setItem('wc-leads', JSON.stringify(leads)); }, [leads]);
+            useEffect(() => { localStorage.setItem('wc-buyers', JSON.stringify(buyers)); }, [buyers]);
+            useEffect(() => { localStorage.setItem('wc-deals', JSON.stringify(deals)); }, [deals]);
 
-  useEffect(() => {
-    const saveData = async () => {
-      try {
-        await window.storage.set('wholesaling-deals', JSON.stringify(deals));
-      } catch (error) {
-        console.error('Error saving deals:', error);
-      }
-    };
-    if (deals.length > 0) saveData();
-  }, [deals]);
+            // Calculate KPIs
+            const kpis = {
+                totalLeads: leads.length,
+                qualified: leads.filter(l => l.status === 'qualified').length,
+                underContract: deals.filter(d => d.status === 'under_contract').length,
+                closed: deals.filter(d => d.status === 'closed').length,
+                totalRevenue: deals.filter(d => d.status === 'closed').reduce((sum, d) => sum + (parseFloat(d.assignmentFee) || 0), 0),
+                totalBuyers: buyers.length
+            };
 
-  useEffect(() => {
-    const saveData = async () => {
-      try {
-        await window.storage.set('wholesaling-activities', JSON.stringify(activities));
-      } catch (error) {
-        console.error('Error saving activities:', error);
-      }
-    };
-    if (activities.length > 0) saveData();
-  }, [activities]);
+            // Add Lead
+            const addLead = (lead) => {
+                const newLead = { ...lead, id: Date.now(), createdAt: new Date().toISOString(), status: lead.status || 'new' };
+                setLeads([...leads, newLead]);
+                setShowModal(null);
+            };
 
-  // Add new lead
-  const addLead = () => {
-    const newLead = {
-      id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      name: '',
-      address: '',
-      city: '',
-      zip: '',
-      phone: '',
-      email: '',
-      source: 'PropStream',
-      propertyType: 'Single Family',
-      status: 'New',
-      motivation: '',
-      condition: '',
-      askingPrice: '',
-      equity: '',
-      lastContact: new Date().toISOString().split('T')[0],
-      nextFollowUp: '',
-      callAttempts: 0,
-      smsAttempts: 0,
-      emailAttempts: 0,
-      notes: ''
-    };
-    setLeads([newLead, ...leads]);
-  };
+            // Add Buyer  
+            const addBuyer = (buyer) => {
+                const newBuyer = { ...buyer, id: Date.now(), createdAt: new Date().toISOString() };
+                setBuyers([...buyers, newBuyer]);
+                setShowModal(null);
+            };
 
-  // Update lead
-  const updateLead = (id, field, value) => {
-    setLeads(leads.map(lead => 
-      lead.id === id ? { ...lead, [field]: value } : lead
-    ));
-  };
+            // Add Deal
+            const addDeal = (deal) => {
+                const newDeal = { ...deal, id: Date.now(), createdAt: new Date().toISOString(), status: deal.status || 'under_contract' };
+                setDeals([...deals, newDeal]);
+                setShowModal(null);
+            };
 
-  // Delete lead
-  const deleteLead = (id) => {
-    if (window.confirm('Are you sure you want to delete this lead?')) {
-      setLeads(leads.filter(lead => lead.id !== id));
-    }
-  };
+            // Delete functions
+            const deleteLead = (id) => setLeads(leads.filter(l => l.id !== id));
+            const deleteBuyer = (id) => setBuyers(buyers.filter(b => b.id !== id));
+            const deleteDeal = (id) => setDeals(deals.filter(d => d.id !== id));
 
-  // Add new buyer
-  const addBuyer = () => {
-    const newBuyer = {
-      id: Date.now(),
-      name: '',
-      company: '',
-      email: '',
-      phone: '',
-      targetZips: '',
-      priceRange: '',
-      propertyTypes: 'Single Family',
-      proofOfFunds: 'No',
-      preferredContact: 'Email',
-      dealsCompleted: 0,
-      notes: ''
-    };
-    setBuyers([newBuyer, ...buyers]);
-  };
+            // Export to CSV
+            const exportCSV = () => {
+                const data = { leads, buyers, deals, exportDate: new Date().toISOString() };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'wholesaling-data-' + new Date().toISOString().split('T')[0] + '.json';
+                a.click();
+            };
 
-  // Update buyer
-  const updateBuyer = (id, field, value) => {
-    setBuyers(buyers.map(buyer => 
-      buyer.id === id ? { ...buyer, [field]: value } : buyer
-    ));
-  };
+            // Filter leads by search
+            const filteredLeads = leads.filter(l => 
+                l.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                l.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                l.phone?.includes(searchTerm)
+            );
 
-  // Delete buyer
-  const deleteBuyer = (id) => {
-    if (window.confirm('Are you sure you want to delete this buyer?')) {
-      setBuyers(buyers.filter(buyer => buyer.id !== id));
-    }
-  };
-
-  // Add new deal
-  const addDeal = () => {
-    const newDeal = {
-      id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      address: '',
-      seller: '',
-      contractPrice: '',
-      assignmentFee: '',
-      buyer: '',
-      arv: '',
-      repairCost: '',
-      status: 'Under Contract',
-      closeDate: '',
-      notes: ''
-    };
-    setDeals([newDeal, ...deals]);
-  };
-
-  // Update deal
-  const updateDeal = (id, field, value) => {
-    setDeals(deals.map(deal => 
-      deal.id === id ? { ...deal, [field]: value } : deal
-    ));
-  };
-
-  // Delete deal
-  const deleteDeal = (id) => {
-    if (window.confirm('Are you sure you want to delete this deal?')) {
-      setDeals(deals.filter(deal => deal.id !== id));
-    }
-  };
-
-  // Log activity
-  const logActivity = (type, leadId, note) => {
-    const newActivity = {
-      id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toLocaleTimeString(),
-      type,
-      leadId,
-      note
-    };
-    setActivities([newActivity, ...activities]);
-  };
-
-  // Calculate KPIs
-  const calculateKPIs = () => {
-    const newLeads = leads.filter(l => l.status === 'New').length;
-    const contacted = leads.filter(l => l.status === 'Contacted').length;
-    const qualified = leads.filter(l => l.status === 'Qualified').length;
-    const underContract = deals.filter(d => d.status === 'Under Contract').length;
-    const closed = deals.filter(d => d.status === 'Closed').length;
-    const totalRevenue = deals.filter(d => d.status === 'Closed').reduce((sum, d) => sum + (parseFloat(d.assignmentFee) || 0), 0);
-    const avgFee = closed > 0 ? totalRevenue / closed : 0;
-
-    return {
-      totalLeads: leads.length,
-      newLeads,
-      contacted,
-      qualified,
-      underContract,
-      closed,
-      totalRevenue,
-      avgFee,
-      conversionRate: leads.length > 0 ? ((closed / leads.length) * 100).toFixed(1) : 0
-    };
-  };
-
-  const kpis = calculateKPIs();
-
-  // Filter leads
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = searchTerm === '' || 
-      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.phone.includes(searchTerm);
-    const matchesFilter = filterStatus === 'all' || lead.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
-
-  // Export to CSV
-  const exportToCSV = (data, filename) => {
-    if (data.length === 0) {
-      alert('No data to export');
-      return;
-    }
-    const headers = Object.keys(data[0]).join(',');
-    const rows = data.map(row => Object.values(row).map(val => `"${val}"`).join(',')).join('\n');
-    const csv = `${headers}\n${rows}`;
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-6 border border-white/20">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Wholesaling Business Tracker</h1>
-              <p className="text-blue-200">Complete CRM & Deal Management System</p>
-            </div>
-            <Home className="text-blue-300" size={48} />
-          </div>
-
-          {/* KPI Dashboard */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-6">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4">
-              <div className="text-blue-100 text-sm mb-1">Total Leads</div>
-              <div className="text-3xl font-bold text-white">{kpis.totalLeads}</div>
-            </div>
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4">
-              <div className="text-purple-100 text-sm mb-1">Qualified</div>
-              <div className="text-3xl font-bold text-white">{kpis.qualified}</div>
-            </div>
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4">
-              <div className="text-orange-100 text-sm mb-1">Under Contract</div>
-              <div className="text-3xl font-bold text-white">{kpis.underContract}</div>
-            </div>
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4">
-              <div className="text-green-100 text-sm mb-1">Closed Deals</div>
-              <div className="text-3xl font-bold text-white">{kpis.closed}</div>
-            </div>
-            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-4">
-              <div className="text-emerald-100 text-sm mb-1">Total Revenue</div>
-              <div className="text-2xl font-bold text-white">${kpis.totalRevenue.toLocaleString()}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-2 mb-6 border border-white/20">
-          <div className="flex flex-wrap gap-2">
-            {['leads', 'buyers', 'deals', 'analytics'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  activeTab === tab
-                    ? 'bg-blue-500 text-white shadow-lg'
-                    : 'bg-white/5 text-blue-200 hover:bg-white/10'
-                }`}
-              >
-                {tab === 'leads' && <Phone className="inline mr-2" size={18} />}
-                {tab === 'buyers' && <Users className="inline mr-2" size={18} />}
-                {tab === 'deals' && <DollarSign className="inline mr-2" size={18} />}
-                {tab === 'analytics' && <BarChart3 className="inline mr-2" size={18} />}
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Leads Tab */}
-        {activeTab === 'leads' && (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Lead Pipeline</h2>
-              <div className="flex gap-2">
+            // Tab Button Component
+            const TabButton = ({ id, icon: Icon, label }) => (
                 <button
-                  onClick={() => exportToCSV(leads, 'leads.csv')}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                    onClick={() => setActiveTab(id)}
+                    className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${activeTab === id ? 'tab-active text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
                 >
-                  <Download size={18} />
-                  Export CSV
+                    <Icon />
+                    <span className="font-medium">{label}</span>
                 </button>
-                <button
-                  onClick={addLead}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <Plus size={18} />
-                  Add Lead
-                </button>
-              </div>
-            </div>
+            );
 
-            {/* Search and Filter */}
-            <div className="grid md:grid-cols-2 gap-4 mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 text-blue-300" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search by name, address, or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-white/5 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white placeholder-blue-300"
-                />
-              </div>
-              <div className="relative">
-                <Filter className="absolute left-3 top-3 text-blue-300" size={20} />
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full bg-white/5 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="New">New</option>
-                  <option value="Contacted">Contacted</option>
-                  <option value="Qualified">Qualified</option>
-                  <option value="Not Interested">Not Interested</option>
-                  <option value="Follow Up">Follow Up</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Leads Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-white">
-                <thead>
-                  <tr className="border-b border-white/20">
-                    <th className="text-left p-3 text-blue-200">Date</th>
-                    <th className="text-left p-3 text-blue-200">Name</th>
-                    <th className="text-left p-3 text-blue-200">Address</th>
-                    <th className="text-left p-3 text-blue-200">Phone</th>
-                    <th className="text-left p-3 text-blue-200">Status</th>
-                    <th className="text-left p-3 text-blue-200">Source</th>
-                    <th className="text-left p-3 text-blue-200">Calls</th>
-                    <th className="text-left p-3 text-blue-200">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredLeads.map(lead => (
-                    <tr key={lead.id} className="border-b border-white/10 hover:bg-white/5">
-                      <td className="p-3">
-                        <input
-                          type="date"
-                          value={lead.date}
-                          onChange={(e) => updateLead(lead.id, 'date', e.target.value)}
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-sm text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          value={lead.name}
-                          onChange={(e) => updateLead(lead.id, 'name', e.target.value)}
-                          placeholder="Seller Name"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          value={lead.address}
-                          onChange={(e) => updateLead(lead.id, 'address', e.target.value)}
-                          placeholder="Property Address"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="tel"
-                          value={lead.phone}
-                          onChange={(e) => updateLead(lead.id, 'phone', e.target.value)}
-                          placeholder="Phone"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <select
-                          value={lead.status}
-                          onChange={(e) => updateLead(lead.id, 'status', e.target.value)}
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-white"
-                        >
-                          <option value="New">New</option>
-                          <option value="Contacted">Contacted</option>
-                          <option value="Qualified">Qualified</option>
-                          <option value="Not Interested">Not Interested</option>
-                          <option value="Follow Up">Follow Up</option>
-                        </select>
-                      </td>
-                      <td className="p-3 text-sm">{lead.source}</td>
-                      <td className="p-3">
-                        <input
-                          type="number"
-                          value={lead.callAttempts}
-                          onChange={(e) => updateLead(lead.id, 'callAttempts', parseInt(e.target.value) || 0)}
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-16 text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => deleteLead(lead.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredLeads.length === 0 && (
-                <div className="text-center py-12 text-blue-300">
-                  <AlertCircle className="mx-auto mb-3" size={48} />
-                  <p>No leads found. Click "Add Lead" to get started!</p>
+            // Stat Card Component
+            const StatCard = ({ title, value, color, icon: Icon }) => (
+                <div className={`stat-card gradient-card rounded-xl p-6 ${color}`}>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-gray-400 text-sm mb-1">{title}</p>
+                            <p className="text-3xl font-bold text-white">{value}</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-white/10">
+                            <Icon />
+                        </div>
+                    </div>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+            );
 
-        {/* Buyers Tab */}
-        {activeTab === 'buyers' && (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Buyer List</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => exportToCSV(buyers, 'buyers.csv')}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <Download size={18} />
-                  Export CSV
-                </button>
-                <button
-                  onClick={addBuyer}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <Plus size={18} />
-                  Add Buyer
-                </button>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-white">
-                <thead>
-                  <tr className="border-b border-white/20">
-                    <th className="text-left p-3 text-blue-200">Name</th>
-                    <th className="text-left p-3 text-blue-200">Company</th>
-                    <th className="text-left p-3 text-blue-200">Phone</th>
-                    <th className="text-left p-3 text-blue-200">Email</th>
-                    <th className="text-left p-3 text-blue-200">Target ZIPs</th>
-                    <th className="text-left p-3 text-blue-200">Price Range</th>
-                    <th className="text-left p-3 text-blue-200">POF</th>
-                    <th className="text-left p-3 text-blue-200">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {buyers.map(buyer => (
-                    <tr key={buyer.id} className="border-b border-white/10 hover:bg-white/5">
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          value={buyer.name}
-                          onChange={(e) => updateBuyer(buyer.id, 'name', e.target.value)}
-                          placeholder="Buyer Name"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          value={buyer.company}
-                          onChange={(e) => updateBuyer(buyer.id, 'company', e.target.value)}
-                          placeholder="Company"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="tel"
-                          value={buyer.phone}
-                          onChange={(e) => updateBuyer(buyer.id, 'phone', e.target.value)}
-                          placeholder="Phone"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="email"
-                          value={buyer.email}
-                          onChange={(e) => updateBuyer(buyer.id, 'email', e.target.value)}
-                          placeholder="Email"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          value={buyer.targetZips}
-                          onChange={(e) => updateBuyer(buyer.id, 'targetZips', e.target.value)}
-                          placeholder="60426, 60419"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          value={buyer.priceRange}
-                          onChange={(e) => updateBuyer(buyer.id, 'priceRange', e.target.value)}
-                          placeholder="$50k-$150k"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <select
-                          value={buyer.proofOfFunds}
-                          onChange={(e) => updateBuyer(buyer.id, 'proofOfFunds', e.target.value)}
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-white"
-                        >
-                          <option value="Yes">Yes</option>
-                          <option value="No">No</option>
-                        </select>
-                      </td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => deleteBuyer(buyer.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {buyers.length === 0 && (
-                <div className="text-center py-12 text-blue-300">
-                  <AlertCircle className="mx-auto mb-3" size={48} />
-                  <p>No buyers yet. Click "Add Buyer" to build your buyer list!</p>
+            // Modal Component
+            const Modal = ({ title, children, onClose }) => (
+                <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 animate-fade-in" onClick={onClose}>
+                    <div className="gradient-card rounded-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-white">{title}</h2>
+                            <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><Icons.X /></button>
+                        </div>
+                        {children}
+                    </div>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+            );
 
-        {/* Deals Tab */}
-        {activeTab === 'deals' && (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Deal Pipeline</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => exportToCSV(deals, 'deals.csv')}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <Download size={18} />
-                  Export CSV
-                </button>
-                <button
-                  onClick={addDeal}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <Plus size={18} />
-                  Add Deal
-                </button>
-              </div>
-            </div>
+            // Lead Form
+            const LeadForm = () => {
+                const [form, setForm] = useState({ name: '', address: '', phone: '', email: '', source: '', status: 'new', notes: '' });
+                return (
+                    <form onSubmit={(e) => { e.preventDefault(); addLead(form); }}>
+                        <div className="space-y-4">
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Seller Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Property Address" value={form.address} onChange={e => setForm({...form, address: e.target.value})} required />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Phone" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Email" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                            <select className="input-field w-full px-4 py-3 rounded-lg" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+                                <option value="new">New Lead</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="qualified">Qualified</option>
+                                <option value="not_interested">Not Interested</option>
+                            </select>
+                            <textarea className="input-field w-full px-4 py-3 rounded-lg" placeholder="Notes" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={3} />
+                            <button type="submit" className="btn-primary w-full py-3 rounded-lg text-white font-semibold">Add Lead</button>
+                        </div>
+                    </form>
+                );
+            };
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-white">
-                <thead>
-                  <tr className="border-b border-white/20">
-                    <th className="text-left p-3 text-blue-200">Date</th>
-                    <th className="text-left p-3 text-blue-200">Address</th>
-                    <th className="text-left p-3 text-blue-200">Seller</th>
-                    <th className="text-left p-3 text-blue-200">Contract Price</th>
-                    <th className="text-left p-3 text-blue-200">Assignment Fee</th>
-                    <th className="text-left p-3 text-blue-200">Buyer</th>
-                    <th className="text-left p-3 text-blue-200">Status</th>
-                    <th className="text-left p-3 text-blue-200">Close Date</th>
-                    <th className="text-left p-3 text-blue-200">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deals.map(deal => (
-                    <tr key={deal.id} className="border-b border-white/10 hover:bg-white/5">
-                      <td className="p-3">
-                        <input
-                          type="date"
-                          value={deal.date}
-                          onChange={(e) => updateDeal(deal.id, 'date', e.target.value)}
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-sm text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          value={deal.address}
-                          onChange={(e) => updateDeal(deal.id, 'address', e.target.value)}
-                          placeholder="Property Address"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          value={deal.seller}
-                          onChange={(e) => updateDeal(deal.id, 'seller', e.target.value)}
-                          placeholder="Seller Name"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="number"
-                          value={deal.contractPrice}
-                          onChange={(e) => updateDeal(deal.id, 'contractPrice', e.target.value)}
-                          placeholder="$0"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="number"
-                          value={deal.assignmentFee}
-                          onChange={(e) => updateDeal(deal.id, 'assignmentFee', e.target.value)}
-                          placeholder="$0"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          value={deal.buyer}
-                          onChange={(e) => updateDeal(deal.id, 'buyer', e.target.value)}
-                          placeholder="Buyer Name"
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <select
-                          value={deal.status}
-                          onChange={(e) => updateDeal(deal.id, 'status', e.target.value)}
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-white"
-                        >
-                          <option value="Under Contract">Under Contract</option>
-                          <option value="Assigned">Assigned</option>
-                          <option value="Closed">Closed</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="date"
-                          value={deal.closeDate}
-                          onChange={(e) => updateDeal(deal.id, 'closeDate', e.target.value)}
-                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-sm text-white"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => deleteDeal(deal.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {deals.length === 0 && (
-                <div className="text-center py-12 text-blue-300">
-                  <AlertCircle className="mx-auto mb-3" size={48} />
-                  <p>No deals yet. Click "Add Deal" to track your first contract!</p>
+            // Buyer Form
+            const BuyerForm = () => {
+                const [form, setForm] = useState({ name: '', company: '', phone: '', email: '', budget: '', areas: '', criteria: '' });
+                return (
+                    <form onSubmit={(e) => { e.preventDefault(); addBuyer(form); }}>
+                        <div className="space-y-4">
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Buyer Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Company" value={form.company} onChange={e => setForm({...form, company: e.target.value})} />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Phone" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Email" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Budget ($)" type="number" value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Target Areas" value={form.areas} onChange={e => setForm({...form, areas: e.target.value})} />
+                            <textarea className="input-field w-full px-4 py-3 rounded-lg" placeholder="Buying Criteria" value={form.criteria} onChange={e => setForm({...form, criteria: e.target.value})} rows={3} />
+                            <button type="submit" className="btn-primary w-full py-3 rounded-lg text-white font-semibold">Add Buyer</button>
+                        </div>
+                    </form>
+                );
+            };
+
+            // Deal Form
+            const DealForm = () => {
+                const [form, setForm] = useState({ address: '', arv: '', purchasePrice: '', assignmentFee: '', buyerId: '', status: 'under_contract', notes: '' });
+                return (
+                    <form onSubmit={(e) => { e.preventDefault(); addDeal(form); }}>
+                        <div className="space-y-4">
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Property Address" value={form.address} onChange={e => setForm({...form, address: e.target.value})} required />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="ARV ($)" type="number" value={form.arv} onChange={e => setForm({...form, arv: e.target.value})} />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Purchase Price ($)" type="number" value={form.purchasePrice} onChange={e => setForm({...form, purchasePrice: e.target.value})} />
+                            <input className="input-field w-full px-4 py-3 rounded-lg" placeholder="Assignment Fee ($)" type="number" value={form.assignmentFee} onChange={e => setForm({...form, assignmentFee: e.target.value})} />
+                            <select className="input-field w-full px-4 py-3 rounded-lg" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+                                <option value="under_contract">Under Contract</option>
+                                <option value="assigned">Assigned to Buyer</option>
+                                <option value="closed">Closed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                            <textarea className="input-field w-full px-4 py-3 rounded-lg" placeholder="Notes" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={3} />
+                            <button type="submit" className="btn-primary w-full py-3 rounded-lg text-white font-semibold">Add Deal</button>
+                        </div>
+                    </form>
+                );
+            };
+
+            // Main return
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">Wholesaling Command Center</h1>
+                        <p className="text-gray-400">Track your path to 6-figures</p>
+                    </div>
+
+                    {/* Navigation Tabs */}
+                    <div className="flex flex-wrap justify-center gap-2 mb-8">
+                        <TabButton id="dashboard" icon={Icons.BarChart} label="Dashboard" />
+                        <TabButton id="leads" icon={Icons.Phone} label="Leads" />
+                        <TabButton id="buyers" icon={Icons.Users} label="Buyers" />
+                        <TabButton id="deals" icon={Icons.DollarSign} label="Deals" />
+                    </div>
+
+                    {/* Dashboard Tab */}
+                    {activeTab === 'dashboard' && (
+                        <div className="animate-fade-in">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                <StatCard title="Total Leads" value={kpis.totalLeads} icon={Icons.Phone} />
+                                <StatCard title="Qualified" value={kpis.qualified} icon={Icons.Users} />
+                                <StatCard title="Under Contract" value={kpis.underContract} icon={Icons.DollarSign} />
+                                <StatCard title="Closed Deals" value={kpis.closed} icon={Icons.BarChart} />
+                            </div>
+                            <div className="gradient-card rounded-xl p-6 mb-6">
+                                <h3 className="text-xl font-bold text-white mb-4">Path to 6-Figures</h3>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-gray-400">Revenue Progress</span>
+                                    <span className="text-white font-bold">${kpis.totalRevenue.toLocaleString()} / $100,000</span>
+                                </div>
+                                <div className="w-full bg-gray-700 rounded-full h-4">
+                                    <div className="bg-gradient-to-r from-green-500 to-emerald-400 h-4 rounded-full transition-all" style={{width: `${Math.min((kpis.totalRevenue / 100000) * 100, 100)}%`}}></div>
+                                </div>
+                                <p className="text-gray-400 text-sm mt-2">Target: 15 deals at $7,000 avg assignment fee</p>
+                            </div>
+                            <div className="flex gap-4 flex-wrap">
+                                <button onClick={() => setShowModal('lead')} className="btn-primary px-6 py-3 rounded-lg text-white font-semibold flex items-center gap-2"><Icons.Plus /> Add Lead</button>
+                                <button onClick={exportCSV} className="gradient-card px-6 py-3 rounded-lg text-white font-semibold flex items-center gap-2 hover:bg-white/20 transition"><Icons.Download /> Export Data</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Leads Tab */}
+                    {activeTab === 'leads' && (
+                        <div className="animate-fade-in">
+                            <div className="flex flex-wrap gap-4 mb-6">
+                                <div className="flex-1 min-w-[200px] relative">
+                                    <Icons.Search />
+                                    <input className="input-field w-full pl-10 pr-4 py-3 rounded-lg" placeholder="Search leads..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                                </div>
+                                <button onClick={() => setShowModal('lead')} className="btn-primary px-6 py-3 rounded-lg text-white font-semibold flex items-center gap-2"><Icons.Plus /> Add Lead</button>
+                            </div>
+                            <div className="grid gap-4">
+                                {filteredLeads.length === 0 ? (
+                                    <div className="gradient-card rounded-xl p-8 text-center">
+                                        <p className="text-gray-400">No leads yet. Add your first lead to get started!</p>
+                                    </div>
+                                ) : filteredLeads.map(lead => (
+                                    <div key={lead.id} className="gradient-card rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+                                        <div>
+                                            <h3 className="text-white font-semibold">{lead.name}</h3>
+                                            <p className="text-gray-400 text-sm">{lead.address}</p>
+                                            <p className="text-gray-500 text-xs">{lead.phone} | {lead.email}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${lead.status === 'qualified' ? 'bg-green-500/20 text-green-400' : lead.status === 'contacted' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'}`}>{lead.status}</span>
+                                            <button onClick={() => deleteLead(lead.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition"><Icons.Trash /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Buyers Tab */}
+                    {activeTab === 'buyers' && (
+                        <div className="animate-fade-in">
+                            <div className="flex justify-end mb-6">
+                                <button onClick={() => setShowModal('buyer')} className="btn-primary px-6 py-3 rounded-lg text-white font-semibold flex items-center gap-2"><Icons.Plus /> Add Buyer</button>
+                            </div>
+                            <div className="grid gap-4">
+                                {buyers.length === 0 ? (
+                                    <div className="gradient-card rounded-xl p-8 text-center">
+                                        <p className="text-gray-400">No buyers yet. Build your cash buyer list!</p>
+                                    </div>
+                                ) : buyers.map(buyer => (
+                                    <div key={buyer.id} className="gradient-card rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+                                        <div>
+                                            <h3 className="text-white font-semibold">{buyer.name}</h3>
+                                            <p className="text-gray-400 text-sm">{buyer.company}</p>
+                                            <p className="text-gray-500 text-xs">{buyer.phone} | Budget: ${Number(buyer.budget).toLocaleString()}</p>
+                                        </div>
+                                        <button onClick={() => deleteBuyer(buyer.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition"><Icons.Trash /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Deals Tab */}
+                    {activeTab === 'deals' && (
+                        <div className="animate-fade-in">
+                            <div className="flex justify-end mb-6">
+                                <button onClick={() => setShowModal('deal')} className="btn-primary px-6 py-3 rounded-lg text-white font-semibold flex items-center gap-2"><Icons.Plus /> Add Deal</button>
+                            </div>
+                            <div className="grid gap-4">
+                                {deals.length === 0 ? (
+                                    <div className="gradient-card rounded-xl p-8 text-center">
+                                        <p className="text-gray-400">No deals yet. Create your first deal!</p>
+                                    </div>
+                                ) : deals.map(deal => (
+                                    <div key={deal.id} className="gradient-card rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+                                        <div>
+                                            <h3 className="text-white font-semibold">{deal.address}</h3>
+                                            <p className="text-gray-400 text-sm">Assignment Fee: ${Number(deal.assignmentFee).toLocaleString()}</p>
+                                            <p className="text-gray-500 text-xs">ARV: ${Number(deal.arv).toLocaleString()} | Purchase: ${Number(deal.purchasePrice).toLocaleString()}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${deal.status === 'closed' ? 'bg-green-500/20 text-green-400' : deal.status === 'under_contract' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'}`}>{deal.status.replace('_', ' ')}</span>
+                                            <button onClick={() => deleteDeal(deal.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition"><Icons.Trash /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modals */}
+                    {showModal === 'lead' && <Modal title="Add New Lead" onClose={() => setShowModal(null)}><LeadForm /></Modal>}
+                    {showModal === 'buyer' && <Modal title="Add New Buyer" onClose={() => setShowModal(null)}><BuyerForm /></Modal>}
+                    {showModal === 'deal' && <Modal title="Add New Deal" onClose={() => setShowModal(null)}><DealForm /></Modal>}
+
+                    {/* Footer */}
+                    <div className="text-center mt-12 text-gray-500 text-sm">
+                        <p>Data saved automatically to browser storage</p>
+                    </div>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+            );
+        }
 
-        {/* Analytics Tab */}
-        {activeTab === 'analytics' && (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-6">Business Analytics</h2>
-            
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white/5 rounded-lg p-6 border border-white/20">
-                <h3 className="text-xl font-bold text-white mb-4">Pipeline Metrics</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-200">Total Leads</span>
-                    <span className="text-2xl font-bold text-white">{kpis.totalLeads}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-200">New Leads</span>
-                    <span className="text-2xl font-bold text-yellow-400">{kpis.newLeads}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-200">Contacted</span>
-                    <span className="text-2xl font-bold text-blue-400">{kpis.contacted}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-200">Qualified</span>
-                    <span className="text-2xl font-bold text-purple-400">{kpis.qualified}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/5 rounded-lg p-6 border border-white/20">
-                <h3 className="text-xl font-bold text-white mb-4">Revenue Metrics</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-200">Under Contract</span>
-                    <span className="text-2xl font-bold text-orange-400">{kpis.underContract}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-200">Closed Deals</span>
-                    <span className="text-2xl font-bold text-green-400">{kpis.closed}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-200">Total Revenue</span>
-                    <span className="text-2xl font-bold text-emerald-400">${kpis.totalRevenue.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-blue-200">Avg Fee</span>
-                    <span className="text-2xl font-bold text-teal-400">${Math.round(kpis.avgFee).toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/5 rounded-lg p-6 border border-white/20 mb-6">
-              <h3 className="text-xl font-bold text-white mb-4">Conversion Funnel</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-blue-200">Lead to Contact Rate</span>
-                    <span className="text-white font-bold">
-                      {kpis.totalLeads > 0 ? ((kpis.contacted / kpis.totalLeads) * 100).toFixed(1) : 0}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-3">
-                    <div 
-                      className="bg-blue-500 h-3 rounded-full transition-all"
-                      style={{ width: `${kpis.totalLeads > 0 ? (kpis.contacted / kpis.totalLeads) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-blue-200">Contact to Qualified Rate</span>
-                    <span className="text-white font-bold">
-                      {kpis.contacted > 0 ? ((kpis.qualified / kpis.contacted) * 100).toFixed(1) : 0}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-3">
-                    <div 
-                      className="bg-purple-500 h-3 rounded-full transition-all"
-                      style={{ width: `${kpis.contacted > 0 ? (kpis.qualified / kpis.contacted) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-blue-200">Overall Conversion Rate (Lead to Close)</span>
-                    <span className="text-white font-bold">{kpis.conversionRate}%</span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-3">
-                    <div 
-                      className="bg-green-500 h-3 rounded-full transition-all"
-                      style={{ width: `${kpis.conversionRate}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg p-6 border border-green-500/30">
-              <h3 className="text-xl font-bold text-white mb-3">📈 Path to 6 Figures</h3>
-              <div className="text-blue-100 space-y-2">
-                <p>• Target: $100,000 annual revenue</p>
-                <p>• Deals needed at $7,000 avg: <strong className="text-white">15 deals/year</strong> (1.25/month)</p>
-                <p>• Current pace: <strong className="text-white">{kpis.closed} deals closed</strong></p>
-                <p>• Revenue to date: <strong className="text-emerald-300">${kpis.totalRevenue.toLocaleString()}</strong></p>
-                <p>• Remaining to goal: <strong className="text-yellow-300">${(100000 - kpis.totalRevenue).toLocaleString()}</strong></p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="mt-6 text-center text-blue-300 text-sm">
-          <p>💾 All data automatically saved • Export CSV anytime • Start with 100 leads and scale!</p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default WholesalingTracker;
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<WholesalingTracker />);
+    </script>
+</body>
+</html>
