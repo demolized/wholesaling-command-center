@@ -1,0 +1,844 @@
+import React, { useState, useEffect } from 'react';
+import { Download, Plus, Trash2, Edit2, Phone, Mail, DollarSign, Home, Users, BarChart3, Calendar, Search, Filter, CheckSquare, AlertCircle } from 'lucide-react';
+
+const WholesalingTracker = () => {
+  const [activeTab, setActiveTab] = useState('leads');
+  const [leads, setLeads] = useState([]);
+  const [buyers, setBuyers] = useState([]);
+  const [deals, setDeals] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  // Load data from storage on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const leadsData = await window.storage.get('wholesaling-leads');
+        const buyersData = await window.storage.get('wholesaling-buyers');
+        const dealsData = await window.storage.get('wholesaling-deals');
+        const activitiesData = await window.storage.get('wholesaling-activities');
+        
+        if (leadsData) setLeads(JSON.parse(leadsData.value));
+        if (buyersData) setBuyers(JSON.parse(buyersData.value));
+        if (dealsData) setDeals(JSON.parse(dealsData.value));
+        if (activitiesData) setActivities(JSON.parse(activitiesData.value));
+      } catch (error) {
+        console.log('No existing data, starting fresh');
+      }
+    };
+    loadData();
+  }, []);
+
+  // Save data to storage whenever it changes
+  useEffect(() => {
+    const saveData = async () => {
+      try {
+        await window.storage.set('wholesaling-leads', JSON.stringify(leads));
+      } catch (error) {
+        console.error('Error saving leads:', error);
+      }
+    };
+    if (leads.length > 0) saveData();
+  }, [leads]);
+
+  useEffect(() => {
+    const saveData = async () => {
+      try {
+        await window.storage.set('wholesaling-buyers', JSON.stringify(buyers));
+      } catch (error) {
+        console.error('Error saving buyers:', error);
+      }
+    };
+    if (buyers.length > 0) saveData();
+  }, [buyers]);
+
+  useEffect(() => {
+    const saveData = async () => {
+      try {
+        await window.storage.set('wholesaling-deals', JSON.stringify(deals));
+      } catch (error) {
+        console.error('Error saving deals:', error);
+      }
+    };
+    if (deals.length > 0) saveData();
+  }, [deals]);
+
+  useEffect(() => {
+    const saveData = async () => {
+      try {
+        await window.storage.set('wholesaling-activities', JSON.stringify(activities));
+      } catch (error) {
+        console.error('Error saving activities:', error);
+      }
+    };
+    if (activities.length > 0) saveData();
+  }, [activities]);
+
+  // Add new lead
+  const addLead = () => {
+    const newLead = {
+      id: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      name: '',
+      address: '',
+      city: '',
+      zip: '',
+      phone: '',
+      email: '',
+      source: 'PropStream',
+      propertyType: 'Single Family',
+      status: 'New',
+      motivation: '',
+      condition: '',
+      askingPrice: '',
+      equity: '',
+      lastContact: new Date().toISOString().split('T')[0],
+      nextFollowUp: '',
+      callAttempts: 0,
+      smsAttempts: 0,
+      emailAttempts: 0,
+      notes: ''
+    };
+    setLeads([newLead, ...leads]);
+  };
+
+  // Update lead
+  const updateLead = (id, field, value) => {
+    setLeads(leads.map(lead => 
+      lead.id === id ? { ...lead, [field]: value } : lead
+    ));
+  };
+
+  // Delete lead
+  const deleteLead = (id) => {
+    if (window.confirm('Are you sure you want to delete this lead?')) {
+      setLeads(leads.filter(lead => lead.id !== id));
+    }
+  };
+
+  // Add new buyer
+  const addBuyer = () => {
+    const newBuyer = {
+      id: Date.now(),
+      name: '',
+      company: '',
+      email: '',
+      phone: '',
+      targetZips: '',
+      priceRange: '',
+      propertyTypes: 'Single Family',
+      proofOfFunds: 'No',
+      preferredContact: 'Email',
+      dealsCompleted: 0,
+      notes: ''
+    };
+    setBuyers([newBuyer, ...buyers]);
+  };
+
+  // Update buyer
+  const updateBuyer = (id, field, value) => {
+    setBuyers(buyers.map(buyer => 
+      buyer.id === id ? { ...buyer, [field]: value } : buyer
+    ));
+  };
+
+  // Delete buyer
+  const deleteBuyer = (id) => {
+    if (window.confirm('Are you sure you want to delete this buyer?')) {
+      setBuyers(buyers.filter(buyer => buyer.id !== id));
+    }
+  };
+
+  // Add new deal
+  const addDeal = () => {
+    const newDeal = {
+      id: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      address: '',
+      seller: '',
+      contractPrice: '',
+      assignmentFee: '',
+      buyer: '',
+      arv: '',
+      repairCost: '',
+      status: 'Under Contract',
+      closeDate: '',
+      notes: ''
+    };
+    setDeals([newDeal, ...deals]);
+  };
+
+  // Update deal
+  const updateDeal = (id, field, value) => {
+    setDeals(deals.map(deal => 
+      deal.id === id ? { ...deal, [field]: value } : deal
+    ));
+  };
+
+  // Delete deal
+  const deleteDeal = (id) => {
+    if (window.confirm('Are you sure you want to delete this deal?')) {
+      setDeals(deals.filter(deal => deal.id !== id));
+    }
+  };
+
+  // Log activity
+  const logActivity = (type, leadId, note) => {
+    const newActivity = {
+      id: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString(),
+      type,
+      leadId,
+      note
+    };
+    setActivities([newActivity, ...activities]);
+  };
+
+  // Calculate KPIs
+  const calculateKPIs = () => {
+    const newLeads = leads.filter(l => l.status === 'New').length;
+    const contacted = leads.filter(l => l.status === 'Contacted').length;
+    const qualified = leads.filter(l => l.status === 'Qualified').length;
+    const underContract = deals.filter(d => d.status === 'Under Contract').length;
+    const closed = deals.filter(d => d.status === 'Closed').length;
+    const totalRevenue = deals.filter(d => d.status === 'Closed').reduce((sum, d) => sum + (parseFloat(d.assignmentFee) || 0), 0);
+    const avgFee = closed > 0 ? totalRevenue / closed : 0;
+
+    return {
+      totalLeads: leads.length,
+      newLeads,
+      contacted,
+      qualified,
+      underContract,
+      closed,
+      totalRevenue,
+      avgFee,
+      conversionRate: leads.length > 0 ? ((closed / leads.length) * 100).toFixed(1) : 0
+    };
+  };
+
+  const kpis = calculateKPIs();
+
+  // Filter leads
+  const filteredLeads = leads.filter(lead => {
+    const matchesSearch = searchTerm === '' || 
+      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.phone.includes(searchTerm);
+    const matchesFilter = filterStatus === 'all' || lead.status === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
+
+  // Export to CSV
+  const exportToCSV = (data, filename) => {
+    if (data.length === 0) {
+      alert('No data to export');
+      return;
+    }
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(row => Object.values(row).map(val => `"${val}"`).join(',')).join('\n');
+    const csv = `${headers}\n${rows}`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-6 border border-white/20">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">Wholesaling Business Tracker</h1>
+              <p className="text-blue-200">Complete CRM & Deal Management System</p>
+            </div>
+            <Home className="text-blue-300" size={48} />
+          </div>
+
+          {/* KPI Dashboard */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-6">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4">
+              <div className="text-blue-100 text-sm mb-1">Total Leads</div>
+              <div className="text-3xl font-bold text-white">{kpis.totalLeads}</div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4">
+              <div className="text-purple-100 text-sm mb-1">Qualified</div>
+              <div className="text-3xl font-bold text-white">{kpis.qualified}</div>
+            </div>
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4">
+              <div className="text-orange-100 text-sm mb-1">Under Contract</div>
+              <div className="text-3xl font-bold text-white">{kpis.underContract}</div>
+            </div>
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4">
+              <div className="text-green-100 text-sm mb-1">Closed Deals</div>
+              <div className="text-3xl font-bold text-white">{kpis.closed}</div>
+            </div>
+            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-4">
+              <div className="text-emerald-100 text-sm mb-1">Total Revenue</div>
+              <div className="text-2xl font-bold text-white">${kpis.totalRevenue.toLocaleString()}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-2 mb-6 border border-white/20">
+          <div className="flex flex-wrap gap-2">
+            {['leads', 'buyers', 'deals', 'analytics'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                  activeTab === tab
+                    ? 'bg-blue-500 text-white shadow-lg'
+                    : 'bg-white/5 text-blue-200 hover:bg-white/10'
+                }`}
+              >
+                {tab === 'leads' && <Phone className="inline mr-2" size={18} />}
+                {tab === 'buyers' && <Users className="inline mr-2" size={18} />}
+                {tab === 'deals' && <DollarSign className="inline mr-2" size={18} />}
+                {tab === 'analytics' && <BarChart3 className="inline mr-2" size={18} />}
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Leads Tab */}
+        {activeTab === 'leads' && (
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Lead Pipeline</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => exportToCSV(leads, 'leads.csv')}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  <Download size={18} />
+                  Export CSV
+                </button>
+                <button
+                  onClick={addLead}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  <Plus size={18} />
+                  Add Lead
+                </button>
+              </div>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 text-blue-300" size={20} />
+                <input
+                  type="text"
+                  placeholder="Search by name, address, or phone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-white/5 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white placeholder-blue-300"
+                />
+              </div>
+              <div className="relative">
+                <Filter className="absolute left-3 top-3 text-blue-300" size={20} />
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full bg-white/5 border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="New">New</option>
+                  <option value="Contacted">Contacted</option>
+                  <option value="Qualified">Qualified</option>
+                  <option value="Not Interested">Not Interested</option>
+                  <option value="Follow Up">Follow Up</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Leads Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-white">
+                <thead>
+                  <tr className="border-b border-white/20">
+                    <th className="text-left p-3 text-blue-200">Date</th>
+                    <th className="text-left p-3 text-blue-200">Name</th>
+                    <th className="text-left p-3 text-blue-200">Address</th>
+                    <th className="text-left p-3 text-blue-200">Phone</th>
+                    <th className="text-left p-3 text-blue-200">Status</th>
+                    <th className="text-left p-3 text-blue-200">Source</th>
+                    <th className="text-left p-3 text-blue-200">Calls</th>
+                    <th className="text-left p-3 text-blue-200">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLeads.map(lead => (
+                    <tr key={lead.id} className="border-b border-white/10 hover:bg-white/5">
+                      <td className="p-3">
+                        <input
+                          type="date"
+                          value={lead.date}
+                          onChange={(e) => updateLead(lead.id, 'date', e.target.value)}
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-sm text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={lead.name}
+                          onChange={(e) => updateLead(lead.id, 'name', e.target.value)}
+                          placeholder="Seller Name"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={lead.address}
+                          onChange={(e) => updateLead(lead.id, 'address', e.target.value)}
+                          placeholder="Property Address"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="tel"
+                          value={lead.phone}
+                          onChange={(e) => updateLead(lead.id, 'phone', e.target.value)}
+                          placeholder="Phone"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <select
+                          value={lead.status}
+                          onChange={(e) => updateLead(lead.id, 'status', e.target.value)}
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-white"
+                        >
+                          <option value="New">New</option>
+                          <option value="Contacted">Contacted</option>
+                          <option value="Qualified">Qualified</option>
+                          <option value="Not Interested">Not Interested</option>
+                          <option value="Follow Up">Follow Up</option>
+                        </select>
+                      </td>
+                      <td className="p-3 text-sm">{lead.source}</td>
+                      <td className="p-3">
+                        <input
+                          type="number"
+                          value={lead.callAttempts}
+                          onChange={(e) => updateLead(lead.id, 'callAttempts', parseInt(e.target.value) || 0)}
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-16 text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => deleteLead(lead.id)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredLeads.length === 0 && (
+                <div className="text-center py-12 text-blue-300">
+                  <AlertCircle className="mx-auto mb-3" size={48} />
+                  <p>No leads found. Click "Add Lead" to get started!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Buyers Tab */}
+        {activeTab === 'buyers' && (
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Buyer List</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => exportToCSV(buyers, 'buyers.csv')}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  <Download size={18} />
+                  Export CSV
+                </button>
+                <button
+                  onClick={addBuyer}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  <Plus size={18} />
+                  Add Buyer
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-white">
+                <thead>
+                  <tr className="border-b border-white/20">
+                    <th className="text-left p-3 text-blue-200">Name</th>
+                    <th className="text-left p-3 text-blue-200">Company</th>
+                    <th className="text-left p-3 text-blue-200">Phone</th>
+                    <th className="text-left p-3 text-blue-200">Email</th>
+                    <th className="text-left p-3 text-blue-200">Target ZIPs</th>
+                    <th className="text-left p-3 text-blue-200">Price Range</th>
+                    <th className="text-left p-3 text-blue-200">POF</th>
+                    <th className="text-left p-3 text-blue-200">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {buyers.map(buyer => (
+                    <tr key={buyer.id} className="border-b border-white/10 hover:bg-white/5">
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={buyer.name}
+                          onChange={(e) => updateBuyer(buyer.id, 'name', e.target.value)}
+                          placeholder="Buyer Name"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={buyer.company}
+                          onChange={(e) => updateBuyer(buyer.id, 'company', e.target.value)}
+                          placeholder="Company"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="tel"
+                          value={buyer.phone}
+                          onChange={(e) => updateBuyer(buyer.id, 'phone', e.target.value)}
+                          placeholder="Phone"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="email"
+                          value={buyer.email}
+                          onChange={(e) => updateBuyer(buyer.id, 'email', e.target.value)}
+                          placeholder="Email"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={buyer.targetZips}
+                          onChange={(e) => updateBuyer(buyer.id, 'targetZips', e.target.value)}
+                          placeholder="60426, 60419"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={buyer.priceRange}
+                          onChange={(e) => updateBuyer(buyer.id, 'priceRange', e.target.value)}
+                          placeholder="$50k-$150k"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <select
+                          value={buyer.proofOfFunds}
+                          onChange={(e) => updateBuyer(buyer.id, 'proofOfFunds', e.target.value)}
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-white"
+                        >
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                        </select>
+                      </td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => deleteBuyer(buyer.id)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {buyers.length === 0 && (
+                <div className="text-center py-12 text-blue-300">
+                  <AlertCircle className="mx-auto mb-3" size={48} />
+                  <p>No buyers yet. Click "Add Buyer" to build your buyer list!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Deals Tab */}
+        {activeTab === 'deals' && (
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Deal Pipeline</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => exportToCSV(deals, 'deals.csv')}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  <Download size={18} />
+                  Export CSV
+                </button>
+                <button
+                  onClick={addDeal}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  <Plus size={18} />
+                  Add Deal
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-white">
+                <thead>
+                  <tr className="border-b border-white/20">
+                    <th className="text-left p-3 text-blue-200">Date</th>
+                    <th className="text-left p-3 text-blue-200">Address</th>
+                    <th className="text-left p-3 text-blue-200">Seller</th>
+                    <th className="text-left p-3 text-blue-200">Contract Price</th>
+                    <th className="text-left p-3 text-blue-200">Assignment Fee</th>
+                    <th className="text-left p-3 text-blue-200">Buyer</th>
+                    <th className="text-left p-3 text-blue-200">Status</th>
+                    <th className="text-left p-3 text-blue-200">Close Date</th>
+                    <th className="text-left p-3 text-blue-200">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deals.map(deal => (
+                    <tr key={deal.id} className="border-b border-white/10 hover:bg-white/5">
+                      <td className="p-3">
+                        <input
+                          type="date"
+                          value={deal.date}
+                          onChange={(e) => updateDeal(deal.id, 'date', e.target.value)}
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-sm text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={deal.address}
+                          onChange={(e) => updateDeal(deal.id, 'address', e.target.value)}
+                          placeholder="Property Address"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={deal.seller}
+                          onChange={(e) => updateDeal(deal.id, 'seller', e.target.value)}
+                          placeholder="Seller Name"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="number"
+                          value={deal.contractPrice}
+                          onChange={(e) => updateDeal(deal.id, 'contractPrice', e.target.value)}
+                          placeholder="$0"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="number"
+                          value={deal.assignmentFee}
+                          onChange={(e) => updateDeal(deal.id, 'assignmentFee', e.target.value)}
+                          placeholder="$0"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={deal.buyer}
+                          onChange={(e) => updateDeal(deal.id, 'buyer', e.target.value)}
+                          placeholder="Buyer Name"
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 w-full text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <select
+                          value={deal.status}
+                          onChange={(e) => updateDeal(deal.id, 'status', e.target.value)}
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-white"
+                        >
+                          <option value="Under Contract">Under Contract</option>
+                          <option value="Assigned">Assigned</option>
+                          <option value="Closed">Closed</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="date"
+                          value={deal.closeDate}
+                          onChange={(e) => updateDeal(deal.id, 'closeDate', e.target.value)}
+                          className="bg-white/5 border border-white/20 rounded px-2 py-1 text-sm text-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => deleteDeal(deal.id)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {deals.length === 0 && (
+                <div className="text-center py-12 text-blue-300">
+                  <AlertCircle className="mx-auto mb-3" size={48} />
+                  <p>No deals yet. Click "Add Deal" to track your first contract!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <h2 className="text-2xl font-bold text-white mb-6">Business Analytics</h2>
+            
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white/5 rounded-lg p-6 border border-white/20">
+                <h3 className="text-xl font-bold text-white mb-4">Pipeline Metrics</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Total Leads</span>
+                    <span className="text-2xl font-bold text-white">{kpis.totalLeads}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">New Leads</span>
+                    <span className="text-2xl font-bold text-yellow-400">{kpis.newLeads}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Contacted</span>
+                    <span className="text-2xl font-bold text-blue-400">{kpis.contacted}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Qualified</span>
+                    <span className="text-2xl font-bold text-purple-400">{kpis.qualified}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/5 rounded-lg p-6 border border-white/20">
+                <h3 className="text-xl font-bold text-white mb-4">Revenue Metrics</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Under Contract</span>
+                    <span className="text-2xl font-bold text-orange-400">{kpis.underContract}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Closed Deals</span>
+                    <span className="text-2xl font-bold text-green-400">{kpis.closed}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Total Revenue</span>
+                    <span className="text-2xl font-bold text-emerald-400">${kpis.totalRevenue.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Avg Fee</span>
+                    <span className="text-2xl font-bold text-teal-400">${Math.round(kpis.avgFee).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/5 rounded-lg p-6 border border-white/20 mb-6">
+              <h3 className="text-xl font-bold text-white mb-4">Conversion Funnel</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-blue-200">Lead to Contact Rate</span>
+                    <span className="text-white font-bold">
+                      {kpis.totalLeads > 0 ? ((kpis.contacted / kpis.totalLeads) * 100).toFixed(1) : 0}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-3">
+                    <div 
+                      className="bg-blue-500 h-3 rounded-full transition-all"
+                      style={{ width: `${kpis.totalLeads > 0 ? (kpis.contacted / kpis.totalLeads) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-blue-200">Contact to Qualified Rate</span>
+                    <span className="text-white font-bold">
+                      {kpis.contacted > 0 ? ((kpis.qualified / kpis.contacted) * 100).toFixed(1) : 0}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-3">
+                    <div 
+                      className="bg-purple-500 h-3 rounded-full transition-all"
+                      style={{ width: `${kpis.contacted > 0 ? (kpis.qualified / kpis.contacted) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-blue-200">Overall Conversion Rate (Lead to Close)</span>
+                    <span className="text-white font-bold">{kpis.conversionRate}%</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-3">
+                    <div 
+                      className="bg-green-500 h-3 rounded-full transition-all"
+                      style={{ width: `${kpis.conversionRate}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg p-6 border border-green-500/30">
+              <h3 className="text-xl font-bold text-white mb-3">📈 Path to 6 Figures</h3>
+              <div className="text-blue-100 space-y-2">
+                <p>• Target: $100,000 annual revenue</p>
+                <p>• Deals needed at $7,000 avg: <strong className="text-white">15 deals/year</strong> (1.25/month)</p>
+                <p>• Current pace: <strong className="text-white">{kpis.closed} deals closed</strong></p>
+                <p>• Revenue to date: <strong className="text-emerald-300">${kpis.totalRevenue.toLocaleString()}</strong></p>
+                <p>• Remaining to goal: <strong className="text-yellow-300">${(100000 - kpis.totalRevenue).toLocaleString()}</strong></p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="mt-6 text-center text-blue-300 text-sm">
+          <p>💾 All data automatically saved • Export CSV anytime • Start with 100 leads and scale!</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WholesalingTracker;
